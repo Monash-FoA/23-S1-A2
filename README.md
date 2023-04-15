@@ -1,6 +1,9 @@
 # 23-S1-A2
 Mountain Climber Assignment
 
+#author
+Andre Pinto
+
 ## Getting Started
 
 Instructions are extremely similar to those of A1:
