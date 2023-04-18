@@ -15,16 +15,20 @@ class WalkerPersonality(ABC):
         raise NotImplementedError()
 
 class TopWalker(WalkerPersonality):
+    
     def select_branch(self, top_branch: Trail, bottom_branch: Trail) -> bool:
         # Always select the top branch
         return True
 
 class BottomWalker(WalkerPersonality):
+    
+    
     def select_branch(self, top_branch: Trail, bottom_branch: Trail) -> bool:
         # Always select the bottom branch
         return False
 
 class LazyWalker(WalkerPersonality):
+    
     def select_branch(self, top_branch: Trail, bottom_branch: Trail) -> bool:
         """
         Try looking into the first mountain on each branch,
