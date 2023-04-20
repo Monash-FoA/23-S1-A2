@@ -25,7 +25,12 @@ class TrailSplit:
 
     def remove_branch(self) -> TrailStore:
         """Removes the branch, should just leave the remaining following trail."""
-        raise NotImplementedError()
+        if self.path_top.store is not None:
+            return self.path_top.store
+        elif self.path_bottom.store is not None:
+            return self.path_bottom.store
+        else:
+            raise ValueError("No branch to remove.")
 
 @dataclass
 class TrailSeries:
@@ -41,23 +46,30 @@ class TrailSeries:
 
     def remove_mountain(self) -> TrailStore:
         """Removes the mountain at the beginning of this series."""
-        raise NotImplementedError()
+        self.mountain = None
+        return self.following.store
 
     def add_mountain_before(self, mountain: Mountain) -> TrailStore:
         """Adds a mountain in series before the current one."""
-        raise NotImplementedError()
+        new_trail_series = TrailSeries(mountain, self)
+        return new_trail_series
 
     def add_empty_branch_before(self) -> TrailStore:
         """Adds an empty branch, where the current trailstore is now the following path."""
-        raise NotImplementedError()
+        empty_trail_split = TrailSplit(path_top=None, path_bottom=None, path_follow=self)
+        return empty_trail_split
 
     def add_mountain_after(self, mountain: Mountain) -> TrailStore:
         """Adds a mountain after the current mountain, but before the following trail."""
-        raise NotImplementedError()
+        new_trail_series = TrailSeries(mountain=mountain, following=self.following)
+        self.following = new_trail_series
+        return new_trail_series
 
     def add_empty_branch_after(self) -> TrailStore:
         """Adds an empty branch after the current mountain, but before the following trail."""
-        raise NotImplementedError()
+        empty_trail_split = TrailSplit(path_top=None, path_bottom=None, path_follow=self.following)
+        self.following = empty_trail_split
+        return empty_trail_split
 
 TrailStore = Union[TrailSplit, TrailSeries, None]
 
