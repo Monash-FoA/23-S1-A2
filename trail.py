@@ -56,18 +56,18 @@ class TrailSeries:
 
     def add_empty_branch_before(self) -> TrailStore:
         """Adds an empty branch, where the current trailstore is now the following path."""
-        empty_trail_split = TrailSplit(path_top=None, path_bottom=None, path_follow=self)
+        empty_trail_split = TrailSplit(None, None, self)
         return empty_trail_split
 
     def add_mountain_after(self, mountain: Mountain) -> TrailStore:
         """Adds a mountain after the current mountain, but before the following trail."""
-        new_trail_series = TrailSeries(mountain=mountain, following=self.following)
+        new_trail_series = TrailSeries(mountain, self.following)
         self.following = new_trail_series
         return new_trail_series
 
     def add_empty_branch_after(self) -> TrailStore:
         """Adds an empty branch after the current mountain, but before the following trail."""
-        empty_trail_split = TrailSplit(path_top=None, path_bottom=None, path_follow=self.following)
+        empty_trail_split = TrailSplit(None, None, self.following)
         self.following = empty_trail_split
         return empty_trail_split
 
