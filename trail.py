@@ -80,15 +80,21 @@ class Trail:
 
     def add_mountain_before(self, mountain: Mountain) -> Trail:
         """Adds a mountain before everything currently in the trail."""
-        raise NotImplementedError()
+        new_trail_series = TrailSeries(mountain, self)
+        return new_trail_series
 
     def add_empty_branch_before(self) -> Trail:
         """Adds an empty branch before everything currently in the trail."""
-        raise NotImplementedError()
+        empty_trail_split = TrailSplit(None, None, self)
+        return empty_trail_split
 
     def follow_path(self, personality: WalkerPersonality) -> None:
         """Follow a path and add mountains according to a personality."""
-        raise NotImplementedError()
+        current_trail = self
+        while current_trail.store is not None:
+            # Add a mountain to the trail based on the walker's personality
+            new_mountain = Mountain(personality.get_next_mountain_height())
+            current_trail = current_trail.store.add_mountain_before(new_mountain)
 
     def collect_all_mountains(self) -> list[Mountain]:
         """Returns a list of all mountains on the trail."""
