@@ -44,3 +44,6 @@ class LazyWalker(WalkerPersonality):
         # If one of them has a mountain, don't take it.
         # If neither do, then take the top branch.
         return not top_m
+
+ #               personality.add_mountain(current.path_bottom.mountain.name)
+        #            stack.push(current.path_bottom)
