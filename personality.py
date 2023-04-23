@@ -12,7 +12,8 @@ class WalkerPersonality(ABC):
 
     @abstractmethod
     def select_branch(self, top_branch: Trail, bottom_branch: Trail) -> bool:
-        raise NotImplementedError()
+        return True
+        #raise NotImplementedError()
 
 class TopWalker(WalkerPersonality):
     def select_branch(self, top_branch: Trail, bottom_branch: Trail) -> bool:

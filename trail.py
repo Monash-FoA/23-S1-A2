@@ -92,10 +92,23 @@ class Trail:
         """Follow a path and add mountains according to a personality."""
         current_trail = self
         while current_trail.store is not None:
-            # Add a mountain to the trail based on the walker's personality
-            new_mountain = Mountain(personality.get_next_mountain_height())
-            current_trail = current_trail.store.add_mountain_before(new_mountain)
-
+            if isinstance(current_trail.store, TrailSeries):
+                # Call select_branch method from WalkerPersonality to decide which branch to take
+                if personality.select_branch(current_trail.store.mountain, current_trail.store.following.mountain):
+                    # Add a mountain to the trail based on the walker's personality
+                    new_mountain = Mountain(personality.get_next_mountain_height())
+                    current_trail = current_trail.store.add_mountain_before(new_mountain)
+                else:
+                    current_trail = current_trail.store.following
+            elif isinstance(current_trail.store, TrailSplit):
+                # Call select_branch method from WalkerPersonality to decide which branch to take
+                if personality.select_branch(current_trail.store.path_top.mountain,
+                                             current_trail.store.path_bottom.mountain):
+                    current_trail = current_trail.store.path_top
+                else:
+                    current_trail = current_trail.store.path_bottom
+            else:
+                raise ValueError("Invalid TrailStore type.")
     def collect_all_mountains(self) -> list[Mountain]:
         """Returns a list of all mountains on the trail."""
         raise NotImplementedError()
