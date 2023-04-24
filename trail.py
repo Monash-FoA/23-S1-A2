@@ -50,25 +50,40 @@ class TrailSeries:
         return self.following.store
 
     def add_mountain_before(self, mountain: Mountain) -> TrailStore:
-        """Adds a mountain in series before the current one."""
-        new_trail_series = TrailSeries(mountain, self)
+        """Adds a mountain in series before the current one.
+
+        """
+        new_trail_series = TrailSeries(mountain, self.following)
+        new_trail_series.following.store = self
+        self.mountain = mountain
         return new_trail_series
+
+
+
 
     def add_empty_branch_before(self) -> TrailStore:
         """Adds an empty branch, where the current trailstore is now the following path."""
-        empty_trail_split = TrailSplit(None, None, self)
+        empty_trail_split = TrailSplit(None, None, self.following)
         return empty_trail_split
 
     def add_mountain_after(self, mountain: Mountain) -> TrailStore:
-        """Adds a mountain after the current mountain, but before the following trail."""
-        new_trail_series = TrailSeries(mountain, self.following)
-        self.following = new_trail_series
+        """
+
+        Adds a mountain after the current mountain, but before the following trail.
+
+        """
+        new_trail_series = TrailSeries(self.mountain, self.following)
+        self.mountain = mountain
+        new_trail_series.following.store = self
         return new_trail_series
+
+
+
 
     def add_empty_branch_after(self) -> TrailStore:
         """Adds an empty branch after the current mountain, but before the following trail."""
         empty_trail_split = TrailSplit(None, None, self.following)
-        self.following = empty_trail_split
+        self.following.store = empty_trail_split
         return empty_trail_split
 
 TrailStore = Union[TrailSplit, TrailSeries, None]
@@ -80,7 +95,8 @@ class Trail:
 
     def add_mountain_before(self, mountain: Mountain) -> Trail:
         """Adds a mountain before everything currently in the trail."""
-        new_trail_series = TrailSeries(mountain, self)
+        new_trail_series = TrailSeries(mountain, self.store)
+        self.store = new_trail_series
         return new_trail_series
 
     def add_empty_branch_before(self) -> Trail:
