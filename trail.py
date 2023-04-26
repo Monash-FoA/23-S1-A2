@@ -29,6 +29,8 @@ class TrailSplit:
             return self.path_top.store
         elif self.path_bottom.store is not None:
             return self.path_bottom.store
+        elif self.path_follow.store is not None:
+            return self.path_follow.store
         else:
             raise ValueError("No branch to remove.")
 
@@ -55,7 +57,6 @@ class TrailSeries:
         """
         new_trail_series = TrailSeries(mountain, self.following)
         new_trail_series.following.store = self
-        self.mountain = mountain
         return new_trail_series
 
 
@@ -63,7 +64,7 @@ class TrailSeries:
 
     def add_empty_branch_before(self) -> TrailStore:
         """Adds an empty branch, where the current trailstore is now the following path."""
-        empty_trail_split = TrailSplit(None, None, self.following)
+        empty_trail_split = TrailSplit(Trail(None), Trail(None), Trail(TrailSeries(self.mountain,self.following)))
         return empty_trail_split
 
     def add_mountain_after(self, mountain: Mountain) -> TrailStore:
@@ -73,18 +74,25 @@ class TrailSeries:
 
         """
         new_trail_series = TrailSeries(self.mountain, self.following)
-        self.mountain = mountain
-        new_trail_series.following.store = self
-        return new_trail_series
+        new_trail_series.mountain = mountain
+        self.following = Trail(new_trail_series)
+        return self
 
 
 
 
     def add_empty_branch_after(self) -> TrailStore:
-        """Adds an empty branch after the current mountain, but before the following trail."""
-        empty_trail_split = TrailSplit(None, None, self.following)
+        """Adds an empty branch after the current mountain, but before the following trail.
+        if self.following.store.path_follow is not None and self.following.store.path_follow.store is None and self.following.store.path_follow.store.mountain is None:
+            self.following.store.path_follow.store = None
+        """
+
+        empty_trail_split = TrailSplit(Trail(None), Trail(None), Trail(TrailSeries(self.mountain, self.following)))
         self.following.store = empty_trail_split
-        return empty_trail_split
+        if self.following.store.path_follow is not None and self.following.store.path_follow.store is None:
+            self.following.store.path_follow.store = None
+        return self
+
 
 TrailStore = Union[TrailSplit, TrailSeries, None]
 
