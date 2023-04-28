@@ -24,13 +24,18 @@ class TrailSplit:
     path_follow: Trail
 
     def remove_branch(self) -> TrailStore:
-        """Removes the branch, should just leave the remaining following trail."""
+        """Removes the branch, should just leave the remaining following trail.
+        """
+        if isinstance(self.path_follow.store, TrailSeries):
+            # return a new TrailSeries with the first mountain as the mountain attribute
+            # and the rest of the TrailSeries as the following attribute
+            return TrailSeries(self.path_follow.store.mountain, self.path_follow.store.following)
         if self.path_top.store is not None:
             return self.path_top.store
         elif self.path_bottom.store is not None:
             return self.path_bottom.store
-        elif self.path_follow.store is not None:
-            return self.path_follow.store
+        #elif self.path_follow.store is not None:
+            #return self.path_follow.store
         else:
             raise ValueError("No branch to remove.")
 
@@ -56,15 +61,13 @@ class TrailSeries:
 
         """
         new_trail_series = TrailSeries(mountain, self.following)
-        new_trail_series.following.store = self
+        self.following.store = self
         return new_trail_series
-
-
-
 
     def add_empty_branch_before(self) -> TrailStore:
         """Adds an empty branch, where the current trailstore is now the following path."""
         empty_trail_split = TrailSplit(Trail(None), Trail(None), Trail(TrailSeries(self.mountain,self.following)))
+        self.following.store = empty_trail_split
         return empty_trail_split
 
     def add_mountain_after(self, mountain: Mountain) -> TrailStore:
@@ -83,15 +86,27 @@ class TrailSeries:
 
     def add_empty_branch_after(self) -> TrailStore:
         """Adds an empty branch after the current mountain, but before the following trail.
-        if self.following.store.path_follow is not None and self.following.store.path_follow.store is None and self.following.store.path_follow.store.mountain is None:
-            self.following.store.path_follow.store = None
+
         """
 
+
+        if self.following.store == TrailSeries(self.mountain,self.following):
+            empty_trail_split = TrailSplit(Trail(None), Trail(None), Trail(None))
+            self.following.store = empty_trail_split
+            return self
+        elif isinstance(self.following.store, TrailSeries):
+            empty_trail_split = TrailSplit(Trail(None), Trail(None), Trail(self.following.store))
+            self.following.store = empty_trail_split
+            return self
         empty_trail_split = TrailSplit(Trail(None), Trail(None), Trail(TrailSeries(self.mountain, self.following)))
         self.following.store = empty_trail_split
-        if self.following.store.path_follow is not None and self.following.store.path_follow.store is None:
-            self.following.store.path_follow.store = None
         return self
+
+
+
+
+
+
 
 
 TrailStore = Union[TrailSplit, TrailSeries, None]
@@ -109,8 +124,9 @@ class Trail:
 
     def add_empty_branch_before(self) -> Trail:
         """Adds an empty branch before everything currently in the trail."""
-        empty_trail_split = TrailSplit(None, None, self)
-        return empty_trail_split
+        empty_trail_split = TrailSplit(Trail(None), Trail(None),Trail(self.store))
+        return Trail(empty_trail_split)
+
 
     def follow_path(self, personality: WalkerPersonality) -> None:
         """Follow a path and add mountains according to a personality."""
