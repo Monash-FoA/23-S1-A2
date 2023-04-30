@@ -28,7 +28,18 @@ class DoubleKeyTable(Generic[K1, K2, V]):
     HASH_BASE = 31
 
     def __init__(self, sizes:list|None=None, internal_sizes:list|None=None) -> None:
-        raise NotImplementedError()
+        if sizes is not None:
+            self.TABLE_SIZES = sizes
+        self.table = ArrayR(len(self.TABLE_SIZES))
+        for i in range(len(self.TABLE_SIZES)):
+            if internal_sizes is not None:
+                sub_table_size = internal_sizes[i]
+            else:
+                sub_table_size = self.TABLE_SIZES[i]
+            self.table[i] = LinearProbeTable(sub_table_size)
+            self.table[i].hash = lambda k: self.hash2(k, self.table[i])
+        self.num_entries = 0
+        self.load_factor = 0.0
 
     def hash1(self, key: K1) -> int:
         """
@@ -65,7 +76,20 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :raises KeyError: When the key pair is not in the table, but is_insert is False.
         :raises FullError: When a table is full and cannot be inserted.
         """
-        raise NotImplementedError()
+        top_index = self.hash1(key1)
+        sub_table = self.table[top_index]
+        while True:
+            sub_index = self.hash2(key2, sub_table)
+            if not is_insert and sub_table[sub_index] is None:
+                raise KeyError((key1, key2))
+            if sub_table[sub_index] is None:
+                return top_index, sub_index
+            elif sub_table[sub_index][0] == key1 and sub_table[sub_index][1][0] == key2:
+                return top_index, sub_index
+            sub_index = (sub_index + 1) % len(sub_table)
+            if sub_index == self.hash2(key2, sub_table):
+                raise FullError()
+
 
     def iter_keys(self, key:K1|None=None) -> Iterator[K1|K2]:
         """

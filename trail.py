@@ -104,11 +104,6 @@ class TrailSeries:
 
 
 
-
-
-
-
-
 TrailStore = Union[TrailSplit, TrailSeries, None]
 
 @dataclass
@@ -118,8 +113,7 @@ class Trail:
 
     def add_mountain_before(self, mountain: Mountain) -> Trail:
         """Adds a mountain before everything currently in the trail."""
-        new_trail_series = TrailSeries(mountain, self.store)
-        self.store = new_trail_series
+        new_trail_series = Trail(TrailSeries(mountain, self))
         return new_trail_series
 
     def add_empty_branch_before(self) -> Trail:
@@ -129,29 +123,210 @@ class Trail:
 
 
     def follow_path(self, personality: WalkerPersonality) -> None:
-        """Follow a path and add mountains according to a personality."""
+        """Follow a path and add mountains according to a personality.
+
+           new_mountain = Mountain(current_trail.store.path_top.store.path_top.store.mountain.name,
+                                            current_trail.store.path_top.store.path_top.store.mountain.difficulty_level,
+                                            current_trail.store.path_top.store.path_top.store.mountain.length)
+                    # add mountain
+                    personality.add_mountain(new_mountain)
+
+
+
+
+        """
         current_trail = self
-        while current_trail.store is not None:
-            if isinstance(current_trail.store, TrailSeries):
-                # Call select_branch method from WalkerPersonality to decide which branch to take
-                if personality.select_branch(current_trail.store.mountain, current_trail.store.following.mountain):
-                    # Add a mountain to the trail based on the walker's personality
-                    new_mountain = Mountain(personality.get_next_mountain_height())
-                    current_trail = current_trail.store.add_mountain_before(new_mountain)
+        #while isinstance(current_trail.store, TrailSplit):
+        if isinstance(current_trail.store, TrailSplit):
+
+            # Call select_branch method from WalkerPersonality to decide which branch to take
+            #when its true
+            if personality.select_branch(current_trail.store.path_top ,current_trail.store.path_bottom):
+                #current_trail.store = current_trail.store.path_top
+                # Add a mountain to the trail based on the walker's personality
+
+                #while isinstance(current_trail.store.path_top.store,TrailSplit):
+                if isinstance(current_trail.store.path_top.store,TrailSplit):
+
+
+                    if personality.select_branch(current_trail.store.path_top.store.path_top,current_trail.store.path_top.store.path_bottom) == True :
+
+                        new_mountain = Mountain(current_trail.store.path_top.store.path_top.store.mountain.name,
+                                                current_trail.store.path_top.store.path_top.store.mountain.difficulty_level,
+                                                current_trail.store.path_top.store.path_top.store.mountain.length)
+                        # add mountain to mountain bois
+                        personality.add_mountain(new_mountain)
+
+
+
+                    else:
+                        #personality.select_branch(current_trail.store.path_top.store.path_top,
+                                                 #current_trail.store.path_top.store.path_bottom) == False:
+                        new_mountain = Mountain(current_trail.store.path_top.store.path_bottom.store.mountain.name,
+                                                current_trail.store.path_top.store.path_bottom.store.mountain.difficulty_level,
+                                                current_trail.store.path_top.store.path_bottom.store.mountain.length)
+                        # add mountain to mountain bois
+                        personality.add_mountain(new_mountain)
+
+
+
+                    #if path follow exist
+                    if current_trail.store.path_top.store.path_follow.store is not None:
+                        new_mountain = Mountain(current_trail.store.path_top.store.path_follow.store.mountain.name,
+                                                current_trail.store.path_top.store.path_follow.store.mountain.difficulty_level,
+                                                current_trail.store.path_top.store.path_follow.store.mountain.length)
+                        # add mountain
+                        personality.add_mountain(new_mountain)
+
+
+                # adding the path follow once top bottom done
+                if current_trail.store.path_follow.store is not None:
+                #if isinstance(current_trail.store.path_follow.store, TrailSeries):
+                    new_mountain = Mountain(current_trail.store.path_follow.store.mountain.name,
+                                            current_trail.store.path_follow.store.mountain.difficulty_level,
+                                            current_trail.store.path_follow.store.mountain.length)
+                    # add mountain
+                    personality.add_mountain(new_mountain)
+
+
+            #when its false
+            else:
+                if isinstance(current_trail.store.path_bottom.store, TrailSeries):
+
+                    if isinstance(current_trail.store.path_bottom.store, TrailSeries):
+                        new_mountain = Mountain(current_trail.store.path_bottom.store.mountain.name,
+                                                current_trail.store.path_bottom.store.mountain.difficulty_level,
+                                                current_trail.store.path_bottom.store.mountain.length)
+                        # add mountain
+                        personality.add_mountain(new_mountain)
+
+                        if isinstance(current_trail.store.path_bottom.store.following.store, TrailSplit):
+                            if current_trail.store.path_bottom.store.following.store.path_bottom.store is not None:
+                                new_mountain = Mountain(
+                                    current_trail.store.path_bottom.store.following.store.path_bottom.store.mountain.name,
+                                    current_trail.store.path_top.store.path_follow.store.mountain.difficulty_level,
+                                    current_trail.store.path_top.store.path_follow.store.mountain.length)
+                                # add mountain
+                                personality.add_mountain(new_mountain)
+
+                    current_trail.store = current_trail.store.path_follow
+                    if isinstance(current_trail.store.store, TrailSeries):
+                        new_mountain = Mountain(current_trail.store.store.mountain.name,
+                                                current_trail.store.store.mountain.difficulty_level,
+                                                current_trail.store.store.mountain.length)
+                        # add mountain
+                        personality.add_mountain(new_mountain)
+
+
+
+
+
+
+                """
+                                    if personality.select_branch(current_trail.store.path_top.store.path_top,
+                                                 current_trail.store.path_top.store.path_bottom) == True:
+
+                        new_mountain = Mountain(current_trail.store.path_bottom.store.mountain.name,
+                                                current_trail.store.path_bottom.store.mountain.difficulty_level,
+                                                current_trail.store.path_bottom.store.mountain.length)
+                        # add mountain
+                        personality.add_mountain(new_mountain)
+
+                        if isinstance(current_trail.store.path_bottom.store.following.store, TrailSplit):
+                            if current_trail.store.path_bottom.store.following.store.path_bottom.store is not None:
+                                new_mountain = Mountain(
+                                    current_trail.store.path_bottom.store.following.store.path_bottom.store.mountain.name,
+                                    current_trail.store.path_top.store.path_follow.store.mountain.difficulty_level,
+                                    current_trail.store.path_top.store.path_follow.store.mountain.length)
+                                # add mountain
+                                personality.add_mountain(new_mountain)
+
+
+
+                    else:
+                        # personality.select_branch(current_trail.store.path_top.store.path_top,
+                        # current_trail.store.path_top.store.path_bottom) == False:
+                        new_mountain = Mountain(current_trail.store.path_bottom.store.mountain.name,
+                                                current_trail.store.path_bottom.store.mountain.difficulty_level,
+                                                current_trail.store.path_bottom.store.mountain.length)
+                        # add mountain
+                        personality.add_mountain(new_mountain)
+
+                        if isinstance(current_trail.store.path_bottom.store.following.store, TrailSplit):
+                            if current_trail.store.path_bottom.store.following.store.path_bottom.store is not None:
+                                new_mountain = Mountain(
+                                    current_trail.store.path_bottom.store.following.store.path_bottom.store.mountain.name,
+                                    current_trail.store.path_top.store.path_follow.store.mountain.difficulty_level,
+                                    current_trail.store.path_top.store.path_follow.store.mountain.length)
+                                # add mountain
+                                personality.add_mountain(new_mountain)
+
+                    # if path follow exist
+                    if current_trail.store.path_top.store.path_follow.store is not None:
+                        new_mountain = Mountain(current_trail.store.path_top.store.path_follow.store.mountain.name,
+                                                current_trail.store.path_top.store.path_follow.store.mountain.difficulty_level,
+                                                current_trail.store.path_top.store.path_follow.store.mountain.length)
+                        # add mountain
+                        personality.add_mountain(new_mountain)
+                    """
+
+        #else:
+            #raise ValueError("Invalid TrailStore type.")
+
+
+
+                #if isinstance(current_trail.store.path_top.store,TrailSeries):
+
+    """
+                    # when its false 
                 else:
-                    current_trail = current_trail.store.following
-            elif isinstance(current_trail.store, TrailSplit):
+                    #current_trail.store = current_trail.store.path_bottom
+                    if isinstance(current_trail.store.path_bottom.store,TrailSeries):
+                        new_mountain = Mountain(current_trail.store.path_bottom.store.mountain.name,
+                                                current_trail.store.path_bottom.store.mountain.difficulty_level,
+                                                current_trail.store.path_bottom.store.mountain.length)
+                        personality.add_mountain(new_mountain)
+                        current_trail = current_trail.store.add_mountain(new_mountain)
+                        current_trail.store = current_trail.store.path_bottom.store
+                        if current_trail.store.following
+                    
+                    
+                    if isinstance(current_trail.store.path_bottom.store,TrailSplit):
+                        new_mountain = Mountain(current_trail.store.path_top.store.path_top.store.mountain.name,
+                                                current_trail.store.path_top.store.path_top.store.mountain.difficulty_level,
+                                                current_trail.store.path_top.store.path_top.store.mountain.length)
+                        # add mountain to mountain bois
+                        personality.add_mountain(new_mountain)
+                        current_trail = current_trail.store.add_mountain(new_mountain)
+                        if current_trail.store.path_top.store.path_follow.store is not Trail(None):
+                            new_mountain = Mountain(current_trail.store.path_top.store.path_follow.store.mountain.name,
+                                                    current_trail.store.path_top.store.path_follow.store.mountain.difficulty_level,
+                                                    current_trail.store.path_top.store.path_follow.store.mountain.length)
+                            # add mountain to mountain bois
+                            personality.add_mountain(new_mountain)
+                            current_trail = current_trail.store.add_mountain(new_mountain)
+                        current_trail.store = current_trail.store
+                        
+                        
+                        
+            elif isinstance(current_trail.store, TrailSeries):
                 # Call select_branch method from WalkerPersonality to decide which branch to take
-                if personality.select_branch(current_trail.store.path_top.mountain,
-                                             current_trail.store.path_bottom.mountain):
+                if personality.select_branch(current_trail.store.store.mountain,
+                                             current_trail.store.path_bottom):
                     current_trail = current_trail.store.path_top
                 else:
                     current_trail = current_trail.store.path_bottom
-            else:
-                raise ValueError("Invalid TrailStore type.")
+            
+            
+                
+                
+                
+                """
+
     def collect_all_mountains(self) -> list[Mountain]:
         """Returns a list of all mountains on the trail."""
         raise NotImplementedError()
+
 
     def length_k_paths(self, k) -> list[list[Mountain]]: # Input to this should not exceed k > 50, at most 5 branches.
         """
