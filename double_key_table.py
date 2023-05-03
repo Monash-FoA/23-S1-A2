@@ -28,16 +28,20 @@ class DoubleKeyTable(Generic[K1, K2, V]):
     HASH_BASE = 31
 
     def __init__(self, sizes:list|None=None, internal_sizes:list|None=None) -> None:
-        if sizes is not None:
+        if sizes is None:
+            self.TABLE_SIZES = self.TABLE_SIZES
+            self.size_index = 0
+        else:
             self.TABLE_SIZES = sizes
-        self.table = ArrayR(len(self.TABLE_SIZES))
+            self.size_index = 0
+        self.table: ArrayR[tuple[K1, K2, V]] = ArrayR(self.TABLE_SIZES[self.size_index])
         for i in range(len(self.TABLE_SIZES)):
             if internal_sizes is not None:
                 sub_table_size = internal_sizes[i]
             else:
                 sub_table_size = self.TABLE_SIZES[i]
-            self.table[i] = LinearProbeTable(sub_table_size)
-            self.table[i].hash = lambda k: self.hash2(k, self.table[i])
+            self.table[i] = LinearProbeTable[sub_table_size, tuple[K1, K2], V]()
+            self.table[i].hash = lambda k: self.hash_combined(k, self.table[i])
         self.num_entries = 0
         self.load_factor = 0.0
 
@@ -98,14 +102,37 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all keys in the bottom-hash-table for k.
         """
-        raise NotImplementedError()
+        if key is None:
+            # Iterate over all top-level keys in the table
+            for i in range(self.size):
+                if self.table[i] is not None:
+                    yield self.table[i][0][0]
+        else:
+            # Iterate over all keys in the bottom-hash-table for key
+            if key not in self:
+                return  # Key does not exist in the table
+            index = self._hash_func(key)  # Get the index of the top-level key
+            for sub_key in self.table[index][1]:
+                yield sub_key
 
     def keys(self, key:K1|None=None) -> list[K1]:
         """
         key = None: returns all top-level keys in the table.
         key = x: returns all bottom-level keys for top-level key x.
         """
-        raise NotImplementedError()
+        if key is None:
+            # Get a list of all top-level keys in the table
+            keys_list = []
+            for i in range(self.size):
+                if self.table[i] is not None:
+                    keys_list.append(self.table[i][0][0])
+            return keys_list
+        else:
+            # Get a list of all bottom-level keys for key
+            if key not in self:
+                raise KeyError(f"Key {key} not found in table")
+            index = self._hash_func(key)  # Get the index of the top-level key
+            return list(self.table[index][1].keys())
 
     def iter_values(self, key:K1|None=None) -> Iterator[V]:
         """
@@ -142,7 +169,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        raise NotImplementedError()
+        index1, index2 = self._linear_probe(key[0], key[1], False)
+        if self.table[index1] is not None and key[1] in self.table[index1]:
+            return self.table[index1][key[1]]
+        else:
+            raise KeyError
 
     def __setitem__(self, key: tuple[K1, K2], data: V) -> None:
         """
