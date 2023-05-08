@@ -35,6 +35,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             self.TABLE_SIZES = sizes
         self.size_index = 0
         self.hash_tables:ArrayR[tuple[K1,ArrayR[tuple[K2,V]]]] = ArrayR(self.TABLE_SIZES[self.size_index])
+        #self.table_size = len(self.hash_tables)
 
         for i in range(len(self.hash_tables)):
             if internal_sizes is None:
@@ -43,7 +44,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 self.internal_sizes = internal_sizes[self.size_index]
 
             hash_table:ArrayR[tuple[K2,V]] = ArrayR(self.internal_sizes)
+            hash_table.table_size = len(hash_table)
+            hash_table.hash = lambda k: self.hash2(k, hash_table)
             self.hash_tables[i] = (None,hash_table)
+
+
 
 
 
@@ -87,12 +92,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
 
         hash_value1 = self.hash1(key1)
-        #sub_table = self.hash_tables[hash_value1]
         hash_value2 = self.hash2(key2, self.hash_tables[hash_value1][-1])
 
 
 
-        for _ in range(self.table_size()):
+        for _ in range(self.table_size):
             if self.hash_tables[hash_value1][0] is None:
                 # Empty spot. Am I upserting or retrieving?
                 if is_insert:
@@ -130,7 +134,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
             else:
                 # Taken by something else. Time to linear probe.
-                hash_value1 = (hash_value1 + 1) % self.table_size()
+                hash_value1 = (hash_value1 + 1) % self.table_size
 
         if is_insert:
             raise FullError("Table is full!")
@@ -150,9 +154,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         if key is None:
             # Iterate over all top-level keys in the table
-            for i in range(self.size):
-                if self.table[i] is not None:
-                    yield self.table[i][0][0]
+            for top_keys in self.hash_tables:
+                if top_keys[0] is not None:
+                    yield top_keys[0]
+
+        # if key is not none:
         else:
             # Iterate over all keys in the bottom-hash-table for key
             if key not in self:
@@ -194,7 +200,14 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all values in the bottom-hash-table for k.
         """
-        raise NotImplementedError()
+        if key is None:
+            # Iterate over all top-level keys in the table
+            for i in range(len(self.hash_tables)):
+                for top_keys in self.hash_tables[i][-1]:
+                    if top_keys is not None:
+                        yield top_keys[-1]
+
+        # if key is not none:
 
     def values(self, key:K1|None=None) -> list[V]:
         """
@@ -260,9 +273,6 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
 
         index1, index2 = self._linear_probe(key[0],key[1], True)
-        #hash_table:ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes)
-        #hash_table[index2] = (key[1], data)
-        #if self.hash_tables[index1][-1][index2] == None:
         if self.hash_tables[index1][0] is None:
             self.hash_tables[index1] = (key[0],self.hash_tables[index1][-1])
 
@@ -326,20 +336,30 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         self.array = new_table.array
         self.size_index = new_table.size_index
 
+    @property
     def table_size(self) -> int:
         """
         Return the current size of the table (different from the length)
         """
-        return len(self.hash_tables)
+        if self.hash_tables:
+            return len(self.hash_tables)
+        else:
+            return len(self)
+
+
 
     def __len__(self) -> int:
         """
         Returns number of elements in the hash table
         """
         count = 0
-        for sub_table in self.hash_tables:
-            count += len(sub_table)
+        for i in range(len(self.hash_tables)):
+            for j in range(len(self.hash_tables[i][-1])):
+                #if self.hash_tables[i][-1][j] is not None:
+                count += 1 #len(sub_table)
+            break
         return count
+        #return len(self.keys())
 
     def __str__(self) -> str:
         """
