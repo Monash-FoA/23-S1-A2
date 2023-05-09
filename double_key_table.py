@@ -31,6 +31,9 @@ class DoubleKeyTable(Generic[K1, K2, V]):
               
     """
     def __init__(self, sizes:list|None=None, internal_sizes:list|None=None) -> None:
+        self.count_low_table = 0
+        self.count_top_table = 0
+        self.list_internal_sizes = internal_sizes
         if sizes is not None:
             self.TABLE_SIZES = sizes
         self.size_index = 0
@@ -160,12 +163,12 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         # if key is not none:
         else:
-            # Iterate over all keys in the bottom-hash-table for key
-            if key not in self:
-                return  # Key does not exist in the table
-            index = self._hash_func(key)  # Get the index of the top-level key
-            for sub_key in self.table[index][1]:
-                yield sub_key
+            for i in range(len(self.hash_tables)):
+                if self.hash_tables[i][0] == key:
+                    for j in range(len(self.hash_tables[i][-1])):
+                        if self.hash_tables[i][-1][j] is not None:
+                            yield self.hash_tables[i][-1][j][0]
+
 
     def keys(self, key:K1|None=None) -> list[K1]:
         """
@@ -208,6 +211,14 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                         yield top_keys[-1]
 
         # if key is not none:
+
+        else:
+            # Get a list of all bottom-level keys for key
+            for i in range(len(self.hash_tables)):
+                if self.hash_tables[i][0] == key:
+                    for j in range(len(self.hash_tables[i][-1])):
+                        if self.hash_tables[i][-1][j] is not None:
+                           yield self.hash_tables[i][-1][j][-1]
 
     def values(self, key:K1|None=None) -> list[V]:
         """
@@ -275,9 +286,15 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         index1, index2 = self._linear_probe(key[0],key[1], True)
         if self.hash_tables[index1][0] is None:
             self.hash_tables[index1] = (key[0],self.hash_tables[index1][-1])
-
+            self.count_top_table += 1
         self.hash_tables[index1][-1][index2] = (key[1], data)
-        #self.hash_tables[index1][-1]
+        self.count_low_table +=1
+
+
+        if self.count_low_table > len(self.hash_tables[index1][-1]) / 2:
+            self._rehash()
+        if self.count_top_table > self.table_size / 2:
+            self._rehash()
 
 
     def __delitem__(self, key: tuple[K1, K2]) -> None:
@@ -289,6 +306,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         empty_no = True
         index1, index2 = self._linear_probe(key[0],key[1], False)
         self.hash_tables[index1][-1][index2] = None
+        self.count_low_table -= 1
         for _ in range(len(self.hash_tables[index1][-1])):
             if self.hash_tables[index1][-1][index2] is not None:
                 empty_no = False
@@ -299,7 +317,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         if empty_no:
             self.hash_tables[index1] = (None,self.hash_tables[index1][-1])
-
+            self.count_top_table -= 1
 
 
     def _rehash(self) -> None:
@@ -310,41 +328,77 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :complexity worst: O(N*hash(K) + N^2*comp(K)) Lots of probing.
         Where N is len(self)
         """
-        new_size_index = self.size_index + 1
-        if new_size_index >= len(self.TABLE_SIZES):
-            raise IndexError("DoubleKeyTable is too large")
-        new_size = self.TABLE_SIZES[new_size_index]
 
-        # Create a new hash table with the larger size
-        new_table = DoubleKeyTable(sizes=[new_size], internal_sizes=self.TABLE_SIZES[:self.size_index + 1])
+        self.size_index += 1
+        #for internal table
+        if self.size_index < len(self.list_internal_sizes):
+            #here also
+            self.internal_sizes = self.list_internal_sizes[self.size_index]
+            for i in range(len(self.hash_tables)):
+                old_hash_table_internal = self.hash_tables[i][-1]
+                old_key1 = self.hash_tables[i][0]
+                new_hash_table_internal:ArrayR[tuple[K2,V]] = ArrayR(self.internal_sizes) # made chg here
+                new_hash_table_internal.table_size = len(new_hash_table_internal)
+                self.hash_tables[i] = (old_key1,new_hash_table_internal)
+                self.count_low_table = 0
+                for item in old_hash_table_internal:
+                    if item is not None:
+                        key, value = item
+                        index1, index2 = self._linear_probe(old_key1, key, True)
+                        self.hash_tables[index1][-1][index2] = (key, value)
+                        self.count_low_table += 1
+            return
 
-        # Update the hash functions of the new table to match the new size
-        new_table.hash1 = self.hash1
-        new_table.hash2 = self.hash2
+        if self.size_index >= len(self.list_internal_sizes):
+            return
 
-        # Iterate through all the existing items in the current hash table
-        for item in self.items():
-            # Compute the new hash value based on the updated hash functions of the new table
-            key1, key2 = item[0]
-            new_hash1 = new_table.hash1(key1)
-            new_hash2 = new_table.hash2(key2, new_table.array[new_hash1])
 
-            # Insert the item into the new table using the __setitem__ method
-            new_table.__setitem__((key1, key2), item[1])
+        # for the top / outer table
 
-        # Replace the current hash table with the new table
-        self.array = new_table.array
-        self.size_index = new_table.size_index
+        if self.size_index < len(self.TABLE_SIZES):
+            new_size = self.TABLE_SIZES[self.size_index]
+            #for i in range(len(self.hash_tables)):
+            old_hash_table_outer = self.hash_tables
+            new_hash_table_outer: ArrayR[tuple[K1, ArrayR[tuple[K2, V]]]] = ArrayR(new_size)
+            self.hash_tables = new_hash_table_outer
+            for j in range(len(self.hash_tables)):
+                hash_table: ArrayR[tuple[K2, V]] = ArrayR(len(self.internal_sizes))
+                hash_table.table_size = len(hash_table)
+                hash_table.hash = lambda k: self.hash2(k, hash_table)
+                self.hash_tables[j] = (None, hash_table)
+
+
+            #self.hash_tables.table_size = len(new_hash_table_outer)
+            self.count_top_table = 0
+            for i in range(len(old_hash_table_outer)):
+                if old_hash_table_outer[i] is not None:
+                    for j in range(len(old_hash_table_outer[i][-1])):
+                        if old_hash_table_outer[i][-1][j] is not None:
+                            key1 = old_hash_table_outer[i][0]
+                            key2 = old_hash_table_outer[i][-1][j][0]
+                            value = old_hash_table_outer[i][-1][j][-1]
+                            index1, index2 = self._linear_probe(key1, key2, True)
+                            if self.hash_tables[index1][0] is None:
+                                self.hash_tables[index1] = (key1, self.hash_tables[index1][-1])
+                                self.count_top_table += 1
+                            self.hash_tables[index1][-1][index2] = (key2, value)
+                            self.count_low_table += 1
+            return
+
+
+
+        if self.size_index >= len(self.TABLE_SIZES) :
+            return
+
+
 
     @property
     def table_size(self) -> int:
         """
         Return the current size of the table (different from the length)
         """
-        if self.hash_tables:
-            return len(self.hash_tables)
-        else:
-            return len(self)
+        return len(self.hash_tables)
+
 
 
 
@@ -352,11 +406,12 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Returns number of elements in the hash table
         """
+
         count = 0
         for i in range(len(self.hash_tables)):
             for j in range(len(self.hash_tables[i][-1])):
-                #if self.hash_tables[i][-1][j] is not None:
-                count += 1 #len(sub_table)
+                if self.hash_tables[i][-1][j] is not None:
+                    count += 1 #len(sub_table)
             break
         return count
         #return len(self.keys())

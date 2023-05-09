@@ -219,7 +219,11 @@ class Trail:
 
     def collect_all_mountains(self) -> list[Mountain]:
         """Returns a list of all mountains on the trail."""
-        raise NotImplementedError()
+        mountains = []
+        for branch in self.branches:
+            mountains.extend(branch.collect_all_mountains())
+        mountains.extend(self.mountains)
+        return mountains
 
 
     def length_k_paths(self, k) -> list[list[Mountain]]: # Input to this should not exceed k > 50, at most 5 branches.
