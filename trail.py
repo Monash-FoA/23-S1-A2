@@ -233,4 +233,15 @@ class Trail:
 
         Paths are unique if they take a different branch, even if this results in the same set of mountains.
         """
-        raise NotImplementedError()
+        paths = []
+        for branch in self.branches:
+            for i in range(len(branch.mountains)):
+                if k == 1:
+                    paths.append([branch.mountains[i]])
+                else:
+                    subpaths = branch.length_k_paths(k - 1)
+                    for subpath in subpaths:
+                        path = [branch.mountains[i]]
+                        path.extend(subpath)
+                        paths.append(path)
+        return paths

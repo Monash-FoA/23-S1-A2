@@ -278,6 +278,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
     # setitem was here
     def __setitem__(self, key: tuple[K1, K2], data: V) -> None:
+
         """
         Set an (key, value) pair in our hash table.
 
@@ -292,8 +293,10 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
 
         if self.count_low_table > len(self.hash_tables[index1][-1]) / 2:
+
             self._rehash()
-        if self.count_top_table > self.table_size / 2:
+
+        if self.count_top_table > len(self.hash_tables) / 2:
             self._rehash()
 
 
@@ -331,6 +334,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         self.size_index += 1
         #for internal table
+        #if self.count_low_table < (self.list_internal_sizes[self.size_index]) / 2 :
         if self.size_index < len(self.list_internal_sizes):
             #here also
             self.internal_sizes = self.list_internal_sizes[self.size_index]
@@ -347,6 +351,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                         index1, index2 = self._linear_probe(old_key1, key, True)
                         self.hash_tables[index1][-1][index2] = (key, value)
                         self.count_low_table += 1
+            self.size_index -= 1
             return
 
         if self.size_index >= len(self.list_internal_sizes):
@@ -383,6 +388,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                                 self.count_top_table += 1
                             self.hash_tables[index1][-1][index2] = (key2, value)
                             self.count_low_table += 1
+            self.hash_tables -=1
             return
 
 
@@ -406,14 +412,14 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Returns number of elements in the hash table
         """
-
         count = 0
         for i in range(len(self.hash_tables)):
             for j in range(len(self.hash_tables[i][-1])):
                 if self.hash_tables[i][-1][j] is not None:
-                    count += 1 #len(sub_table)
+                    count += 1  # len(sub_table)
             break
         return count
+
         #return len(self.keys())
 
     def __str__(self) -> str:
