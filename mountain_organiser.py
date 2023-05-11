@@ -12,20 +12,20 @@ class MountainOrganiser:
         self.mountains = []
 
     def cur_position(self, mountain: Mountain) -> int:
-        lo, hi = 0, len(self.mountains) - 1
-        while lo <= hi:
-            mid = lo + (hi - lo) // 2
+        low, hi = 0, len(self.mountains) - 1
+        while low <= hi:
+            mid = low + (hi - low) // 2
             if self.mountains[mid] == mountain:
                 return mid
             elif self.mountains[mid].length < mountain.length or (
                     self.mountains[mid].length == mountain.length and self.mountains[mid].name < mountain.name):
-                lo = mid + 1
+                low = mid + 1
             else:
                 hi = mid - 1
         raise KeyError("Mountain not found")
 
     def add_mountains(self, mountains: list[Mountain]) -> None:
-        self.mountains.extend(mountains)
+        self.mountains.extend(mountains) # using extend mountain to combine the list
         self.mountains.sort(key=lambda m: (m.length,m.name))
 
 

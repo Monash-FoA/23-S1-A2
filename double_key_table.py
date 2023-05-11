@@ -31,6 +31,24 @@ class DoubleKeyTable(Generic[K1, K2, V]):
               
     """
     def __init__(self, sizes:list|None=None, internal_sizes:list|None=None) -> None:
+
+        """
+        Doc:
+        this init code creates none tuples which will house the k1, and the array storing the tuples of k2,v
+        inside the array base on the size given if none is given then
+        it will use the given TABLE_SIZES . After that it will iterate through each of the none
+        created in the array to make an array on the second part of the tuple and this array contains
+        a tuple which will house the k2,v .
+
+        time complexity:
+        best case : O(1) as it just initializing the variables
+        worst case : O(n*m) where n is the number of hash tables and then the
+        m is the size of the internal table hash . This occur as we are simply
+        creating a hashtable which house a hashtable
+
+
+
+        """
         self.count_low_table = 0
         self.count_top_table = 0
         self.list_internal_sizes = internal_sizes
@@ -92,6 +110,36 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         :raises KeyError: When the key pair is not in the table, but is_insert is False.
         :raises FullError: When a table is full and cannot be inserted.
+
+
+        Doc:
+        for this linear probe first we get the hash value for the key1 and then the
+        hash value for the key 2 . after that a for loop is started and using the
+        hash value 1 of key 1 to check if it is none at that spot or not . if it is then
+        it will  carries on into the key 2 hash value
+        and does the same thing as to check if that certain spot is none or not if it is then
+        then it will return the hash value index for 1 and 2 .
+        Next up is the if the given external table is equalevent to the key one,
+        if it is (since te key 1 can store many k2,v in its second part of the tuple) then it
+        will go to check if its insert or not if it is it will loop the entire internal table looking
+        for an empty spot to place the k2,v if there is then it will return thee index 1 and the index 2
+        ,if there isnt then it will update the hashvalue index to continue to loop again to check
+        the next slot is empty or not using this formula hash_value2 = (hash_value2 + 1) % self.internal_sizes
+        .LAstly for the else , it will also use the hash_value1 = (hash_value1 + 1) % self.table_size
+        to move to the next element and start the loop all over again until it reach the end
+
+
+        time complexity:
+
+        best case : O(1) just putting the keys and values at the none spot on the first
+        attempt
+
+        worst case: O(n*m) where the n is the length of the external table and the
+        n is the internal table to iterate through the arrays to get the index to
+        put the keys and values at
+
+
+
         """
 
         hash_value1 = self.hash1(key1)
@@ -119,9 +167,9 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                     for _ in range(self.internal_sizes):
                         if self.hash_tables[hash_value1][-1][hash_value2] is None:
                             return hash_value1, hash_value2
-                        # if self.hash_tables[hash_value1][-1][hash_value2][0] == key2:
-                        # hash_value2 = (hash_value2 + 1) % self.internal_sizes
+
                         else:
+                            # Taken by something else. Time to linear probe.
                             hash_value2 = (hash_value2 + 1) % self.internal_sizes
                 else:
                     for _ in range(self.internal_sizes):
@@ -129,6 +177,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                             if self.hash_tables[hash_value1][-1][hash_value2][0] == key2:
                                 return hash_value1, hash_value2
                             else:
+                                # Taken by something else. Time to linear probe.
                                 hash_value2 = (hash_value2 + 1) % self.internal_sizes
 
 
@@ -154,6 +203,20 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             Returns an iterator of all top-level keys in hash table
         key = k:
             Returns an iterator of all keys in the bottom-hash-table for k.
+
+
+        Doc:
+        this iter keys takes the yield function that yields the key for the hash
+        table if the key argument is none then it will iterate the top level keys
+        in the table if the key is given and not none then it will iterate through \
+        the internal list and yield it and that specific key spot given .
+
+        Time complexity:
+
+        best case:
+
+        worst case:
+
         """
         if key is None:
             # Iterate over all top-level keys in the table
@@ -290,14 +353,25 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             self.count_top_table += 1
         self.hash_tables[index1][-1][index2] = (key[1], data)
         self.count_low_table +=1
+        self.external_yes = False
+        self.internal_yes = False
 
-
+        #internal table
         if self.count_low_table > len(self.hash_tables[index1][-1]) / 2:
-
+            self.internal_yes = True
+            self.key2_need_resize = self.hash_tables[index1][0]
             self._rehash()
+            self.internal_yes = False
 
+        #external table
         if self.count_top_table > len(self.hash_tables) / 2:
+            self.external_yes = True
+            self.key1_need_resize = self.hash_tables[index1][0]
             self._rehash()
+            self.external_yes = False
+
+        #if self.count_top_table > len(self.hash_tables) / 2:
+            #self._rehash()
 
 
     def __delitem__(self, key: tuple[K1, K2]) -> None:
@@ -332,69 +406,92 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         Where N is len(self)
         """
 
-        self.size_index += 1
+
+
         #for internal table
         #if self.count_low_table < (self.list_internal_sizes[self.size_index]) / 2 :
-        if self.size_index < len(self.list_internal_sizes):
-            #here also
-            self.internal_sizes = self.list_internal_sizes[self.size_index]
-            for i in range(len(self.hash_tables)):
-                old_hash_table_internal = self.hash_tables[i][-1]
-                old_key1 = self.hash_tables[i][0]
-                new_hash_table_internal:ArrayR[tuple[K2,V]] = ArrayR(self.internal_sizes) # made chg here
-                new_hash_table_internal.table_size = len(new_hash_table_internal)
-                self.hash_tables[i] = (old_key1,new_hash_table_internal)
-                self.count_low_table = 0
-                for item in old_hash_table_internal:
-                    if item is not None:
-                        key, value = item
-                        index1, index2 = self._linear_probe(old_key1, key, True)
-                        self.hash_tables[index1][-1][index2] = (key, value)
-                        self.count_low_table += 1
-            self.size_index -= 1
-            return
+        if self.internal_yes:
+            self.size_index += 1
+            if self.size_index >= len(self.list_internal_sizes):
+                self.size_index = 0
+                return
+            else:
+            # if self.size_index < len(self.list_internal_sizes):
+                self.internal_sizes = self.list_internal_sizes[self.size_index]
+                for i in range(len(self.hash_tables)):
+                    if self.hash_tables[i][0] == self.key2_need_resize:
+                        old_hash_table_internal = self.hash_tables[i][-1]
+                        old_key1 = self.hash_tables[i][0]
+                        new_hash_table_internal: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes)  # made chg here
+                        new_hash_table_internal.table_size = len(new_hash_table_internal)
+                        self.hash_tables[i] = (old_key1, new_hash_table_internal)
+                        self.count_low_table = 0
+                        for item in old_hash_table_internal:
+                            if item is not None:
+                                key, value = item
+                                index1, index2 = self._linear_probe(old_key1, key, True)
+                                self.hash_tables[index1][-1][index2] = (key, value)
+                                self.count_low_table += 1
+                        break
 
-        if self.size_index >= len(self.list_internal_sizes):
-            return
+                self.size_index = 0
+                return
+
+
+
+
+
 
 
         # for the top / outer table
+        if self.external_yes:
+            self.size_index += 1
+            if self.size_index >= len(self.TABLE_SIZES):
+                self.size_index = 0
+                return
 
-        if self.size_index < len(self.TABLE_SIZES):
-            new_size = self.TABLE_SIZES[self.size_index]
-            #for i in range(len(self.hash_tables)):
-            old_hash_table_outer = self.hash_tables
-            new_hash_table_outer: ArrayR[tuple[K1, ArrayR[tuple[K2, V]]]] = ArrayR(new_size)
-            self.hash_tables = new_hash_table_outer
-            for j in range(len(self.hash_tables)):
-                hash_table: ArrayR[tuple[K2, V]] = ArrayR(len(self.internal_sizes))
-                hash_table.table_size = len(hash_table)
-                hash_table.hash = lambda k: self.hash2(k, hash_table)
-                self.hash_tables[j] = (None, hash_table)
-
-
-            #self.hash_tables.table_size = len(new_hash_table_outer)
-            self.count_top_table = 0
-            for i in range(len(old_hash_table_outer)):
-                if old_hash_table_outer[i] is not None:
-                    for j in range(len(old_hash_table_outer[i][-1])):
-                        if old_hash_table_outer[i][-1][j] is not None:
-                            key1 = old_hash_table_outer[i][0]
-                            key2 = old_hash_table_outer[i][-1][j][0]
-                            value = old_hash_table_outer[i][-1][j][-1]
-                            index1, index2 = self._linear_probe(key1, key2, True)
-                            if self.hash_tables[index1][0] is None:
-                                self.hash_tables[index1] = (key1, self.hash_tables[index1][-1])
-                                self.count_top_table += 1
-                            self.hash_tables[index1][-1][index2] = (key2, value)
-                            self.count_low_table += 1
-            self.hash_tables -=1
-            return
+        #if self.size_index < len(self.TABLE_SIZES):
+            else:
+                new_size = self.TABLE_SIZES[self.size_index]
+                # for i in range(len(self.hash_tables)):
+                old_hash_table_outer = self.hash_tables
+                new_hash_table_outer: ArrayR[tuple[K1, ArrayR[tuple[K2, V]]]] = ArrayR(new_size)
+                self.hash_tables = new_hash_table_outer
+                for j in range(len(self.hash_tables)):
+                    hash_table: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes)
+                    hash_table.table_size = len(hash_table)
+                    hash_table.hash = lambda k: self.hash2(k, hash_table)
+                    self.hash_tables[j] = (None, hash_table)
 
 
 
-        if self.size_index >= len(self.TABLE_SIZES) :
-            return
+
+                # self.hash_tables.table_size = len(new_hash_table_outer)
+                self.count_top_table = 0
+                for i in range(len(old_hash_table_outer)):
+                    if old_hash_table_outer[i] is not None:
+                        #if len(old_hash_table_outer[i][-1]) == self.internal_sizes:
+                        for j in range(len(old_hash_table_outer[i][-1])):
+                            if old_hash_table_outer[i][-1][j] is not None:
+                                key1 = old_hash_table_outer[i][0]
+                                key2 = old_hash_table_outer[i][-1][j][0]
+                                value = old_hash_table_outer[i][-1][j][-1]
+                                index1, index2 = self._linear_probe(key1, key2, True)
+                                if self.hash_tables[index1][0] is None:
+                                    self.hash_tables[index1] = (key1, self.hash_tables[index1][-1])
+                                    self.count_top_table += 1
+                                self.hash_tables[index1][-1][index2] = (key2, value)
+                                self.count_low_table += 1
+                self.size_index = 0
+
+                return
+
+
+
+
+
+
+
 
 
 
