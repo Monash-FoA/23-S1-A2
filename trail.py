@@ -9,6 +9,11 @@ from typing import TYPE_CHECKING, Union
 if TYPE_CHECKING:
     from personality import WalkerPersonality
 
+
+"""
+This code is done by dylan only just in case cause my teammate didnt bother helping
+so i split the group 
+"""
 @dataclass
 class TrailSplit:
     """
@@ -156,7 +161,8 @@ class Trail:
         mountain accesssing the paths before with that the path stores the current trail and run it back
         again at the top but it continues from where it left off
 
-        time complexity: O(2^n) for the worst case as where the trail have two branches
+        time complexity:
+        worst : O(2^n) for the worst case as where the trail have two branches
         leading to a total of 2^n trails to go through
 
         best case willl be O(1) where just to have one trail in the case
@@ -165,9 +171,11 @@ class Trail:
         while current_trail:
             if isinstance(current_trail.store, TrailSplit):
                 # Call select_branch method from WalkerPersonality to decide which branch to take
+                # take the top path
                 if personality.select_branch(current_trail.store.path_top, current_trail.store.path_bottom):
                     # Add a mountain to the trail based on the walker's personality
                     if isinstance(current_trail.store.path_top.store, TrailSplit):
+                        # choosing which top or bottom to pick
                         if personality.select_branch(current_trail.store.path_top.store.path_top,
                                                      current_trail.store.path_top.store.path_bottom):
                             new_mountain = Mountain(current_trail.store.path_top.store.path_top.store.mountain.name,
@@ -198,17 +206,17 @@ class Trail:
                     current_trail = current_trail.store.path_top.store.path_top
 
 
-
+                # take the bottom path
                 else:
                     if isinstance(current_trail.store.path_bottom.store, TrailSeries):
                         new_mountain = Mountain(current_trail.store.path_bottom.store.mountain.name,
                                                 current_trail.store.path_bottom.store.mountain.difficulty_level,
                                                 current_trail.store.path_bottom.store.mountain.length)
                         personality.add_mountain(new_mountain)
-
+                        # check if the trailseries following part have a trail split or not
                         if isinstance(current_trail.store.path_bottom.store.following.store,TrailSplit)\
                                 and current_trail.store.path_bottom.store.following.store:
-
+                            #choosing which top or botttom to pick
                             if personality.select_branch(current_trail.store.path_bottom.store.following.store.path_top,
                                                          current_trail.store.path_bottom.store.following.store.path_bottom):
 
@@ -245,8 +253,7 @@ class Trail:
 
                     current_trail = current_trail.store.path_bottom
 
-                    #else:
-                       #current_trail = None
+
             else:
                 current_trail = None
 
@@ -281,7 +288,7 @@ class Trail:
         Paths are unique if they take a different branch, even if this results in the same set of mountains.
         """
         paths = []
-        stack = [(self, [], 0)]  # Add a counter to keep track of the number of mountains visited
+        stack = [(self, [], 0)]  # this is to add a counter to add to check for how many mountains
         while stack:
             current_trail, current_path, num_mountains = stack.pop()
             if isinstance(current_trail.store, TrailSeries):

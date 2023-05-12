@@ -493,7 +493,19 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         given internal size list givn at the start got given another size to work with or not if there isnt
         then it will do nothing cause it cant do anything . IF THERE is then it will use that next size
         and start the resizing # comments are given below . Next up is the resizing for the external table
-        this will resize the external table first and then
+        this will resize the external table first after it extracts all the old values and then it
+        will also keep the resized internal tables that was done before
+
+        time complexity:
+
+        good: will be O(n) where n is the length of the internal table needing to resize
+        and it will be better when none of it needed resize as The best-case scenario for this
+        code would be when none of the conditions in the code are met, and the function simply
+        returns without performing any operations. In this case, the time complexity would be O(1).
+
+        bad: will be O(n*m) where the n is the resize of the external table and then m is the internal
+        table as this resize needs to resixze the external table it also needs to resize the
+        internal table .
         """
 
 
@@ -501,6 +513,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         #for internal table
 
         if self.internal_yes:
+            # if there isnt an extra size given it returns nothing
             self.size_index += 1
             if self.size_index >= len(self.list_internal_sizes):
                 self.size_index = 0
@@ -538,6 +551,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         # for the top / outer table
         if self.external_yes:
+            # if there isnt an extra size given it returns nothing
             self.size_index += 1
             if self.size_index >= len(self.TABLE_SIZES):
                 self.size_index = 0
@@ -547,11 +561,12 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             else:
                 # resize the table once it past the load factor
                 new_size = self.TABLE_SIZES[self.size_index]
-                # for i in range(len(self.hash_tables)):
                 old_hash_table_outer = self.hash_tables
                 new_hash_table_outer: ArrayR[tuple[K1, ArrayR[tuple[K2, V]]]] = ArrayR(new_size)
                 self.hash_tables = new_hash_table_outer
 
+                # since tuples are immutable the resize of the internal table needs to do again
+                # so it regenerate the internal size table size
                 for j in range(len(self.hash_tables)):
 
                     hash_table: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes) # testing self.list_internal_sizes[0]
@@ -564,11 +579,13 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 for i in range(len(old_hash_table_outer)):
                     if old_hash_table_outer[i] is not None:
                         #testing codes removed
+
                         for j in range(len(old_hash_table_outer[i][-1])):
                             if old_hash_table_outer[i][-1][j] is not None:
                                 key1 = old_hash_table_outer[i][0]
                                 key2 = old_hash_table_outer[i][-1][j][0]
                                 value = old_hash_table_outer[i][-1][j][-1]
+
                                 index1, index2 = self._linear_probe(key1, key2, True)
                                 if self.hash_tables[index1][0] is None:
                                     self.hash_tables[index1] = (key1, self.hash_tables[index1][-1])
@@ -616,7 +633,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             break
         return count
 
-        #return len(self.keys())
+
 
     def __str__(self) -> str:
         """
