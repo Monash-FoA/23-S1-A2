@@ -213,9 +213,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         Time complexity:
 
-        best case:
+        best case: O(1) where the key is none as it only needs to iterate over the top
+        keys once
 
-        worst case:
+        worst case: O(n) where the n is the number of the internal tables where it
+        needs to iterate through
 
         """
         if key is None:
@@ -237,6 +239,22 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         key = None: returns all top-level keys in the table.
         key = x: returns all bottom-level keys for top-level key x.
+
+        Doc:
+
+        this code collects all the keys when the key is not given of the top
+        table (external table) and then it iterates through te k1 stored in the
+        array and append it . but if the key is given , it will iterate through the
+        k2 where it gets that key and iterate the key second tuple value which is the
+        array of tuples and iterate all the keys that are not none to return it
+
+        time complexity:
+
+        best : case is o(n) where n is the number of the top keys
+
+        worst : case is o(nk) where k is the number of the bottom list or internal list
+        the function will have to iterate over all elements in the list of bottom-level keys for that key
+        and n will be where n is the number of the top keys
         """
         if key is None:
             # Get a list of all top-level keys in the table
@@ -265,6 +283,24 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             Returns an iterator of all values in hash table
         key = k:
             Returns an iterator of all values in the bottom-hash-table for k.
+
+        Doc:
+        this iter values does the same thing as the iter keys as i the key is none
+        it will return all the values in the internal tables using the yield function
+        and ensuring it doesnt take the none values . next up the else take the specific
+        key 1 only and genrate all its key 2 and take its values only formt the key 2 that
+        is not none
+
+        time complexity
+
+        best : case will be O(n) where n is the number of items in the hash table
+
+        worst :  the worst-case time complexity will be O(N), where N is the total
+         number of items in all bottom-hash-tables. this is because that
+         In the worst-case, all bottom-hash-tables need to be iterated to find
+         the bottom-hash-table for the key
+
+
         """
         if key is None:
             # Iterate over all top-level keys in the table
@@ -287,6 +323,18 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         key = None: returns all values in the table.
         key = x: returns all values for top-level key x.
+
+        Doc:
+        same as keys function it will return all the values when the key isnt given
+        and the key given it will retun all of the key2 values of that specific key1
+
+        time complxity:
+
+        best : O(n)where n is the number of the top keys
+
+        worst : case is o(nk) where k is the number of the bottom list or internal list
+        the function will have to iterate over all elements in the list of bottom-level keys for that values
+        and n will be where n is the number of the top keys
         """
         if key is None:
             values_set = []
@@ -325,13 +373,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Get the value at a certain key
 
-        :raises KeyError: when the key doesn't exist.
-
-        index1, index2 = self._linear_probe(key[0], key[-1], False)
-        if self.table[index1] is not None and key[1] in self.table[index1]:
-            return self.table[index1][key[1]]
-        else:
-            raise KeyError
+        doc: get thevalue of the key using the linear probe
         """
         index1, index2 = self._linear_probe(key[0], key[-1], False)
         if self.hash_tables[index1] is not None and key[1] in self.hash_tables[index1]:
@@ -345,12 +387,33 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Set an (key, value) pair in our hash table.
 
+        doc :
+        this setitem is the base to its operation as calling the class
+        with the items of keys and values this will enter the linear probfunction
+        with the keys 1 and 2 and liner probe will return the index to where
+        the table is empty and ready to be placed into . with that
+        once its done it will store the index 1 and 2 and now it will try to
+        append the values at the given index in the hash tables . the if statement
+        at the bottom is the rehash as when it hits past the load factor of 0.5
+        it needs to resize to avoid the hash table function linear probing to slow
+        down when searching for a place to find an empty spot to avoid collision .
+
+        time complexity
+
+        good : is O(1) when all operations in the method have O(1) time complexity,
+         and the hash function perfectly maps the keys to the indices.
+
+        bad: O(n) when all operations have O(n) time complexity, and the hash table
+        is full, and the hash function poorly maps the keys to the indices
+
         """
 
         index1, index2 = self._linear_probe(key[0],key[1], True)
+        #for the top key
         if self.hash_tables[index1][0] is None:
             self.hash_tables[index1] = (key[0],self.hash_tables[index1][-1])
             self.count_top_table += 1
+        #for the low bottom key
         self.hash_tables[index1][-1][index2] = (key[1], data)
         self.count_low_table +=1
         self.external_yes = False
@@ -379,6 +442,23 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         Deletes a (key, value) pair in our hash table.
 
         :raises KeyError: when the key doesn't exist.
+
+        doc:
+        this delete doesnt remove the slot of the certain index in the table,
+        what it does is that it set that specific spot to become none , this will keep
+        th len of the table the same and also remove the key and values in the specific spot\
+        of the table . and doing this for _ loop i will check the key1 if theres is still key2 and v
+        in the tuple itself . if there is it does nothing and continue , but if there is none in the
+        specific key 1 then only it will delete the key 1 by setting it to none .
+
+
+        time complexity:
+
+        good : O(1)  first, the item of the key2 and value must be located using linear probing then after that it
+        locates the corresponding key must also be deleted from the top-level hash table
+
+        bad: o(n) when the  time complexity for deleting an item from the top-level hash table
+        must iterate through the entire array to find the item it needs to delete
         """
         empty_no = True
         index1, index2 = self._linear_probe(key[0],key[1], False)
@@ -404,25 +484,38 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :complexity best: O(N*hash(K)) No probing.
         :complexity worst: O(N*hash(K) + N^2*comp(K)) Lots of probing.
         Where N is len(self)
+
+
+        Doc:
+        this rehash is a bit complicated but it works . For this there will be two major if statement
+        where this will check the internal table and the external table using the load factor of 0.5
+        base to see how full the given hash tables are first the internal table it will check the
+        given internal size list givn at the start got given another size to work with or not if there isnt
+        then it will do nothing cause it cant do anything . IF THERE is then it will use that next size
+        and start the resizing # comments are given below . Next up is the resizing for the external table
+        this will resize the external table first and then
         """
 
 
 
         #for internal table
-        #if self.count_low_table < (self.list_internal_sizes[self.size_index]) / 2 :
+
         if self.internal_yes:
             self.size_index += 1
             if self.size_index >= len(self.list_internal_sizes):
                 self.size_index = 0
                 return
             else:
-            # if self.size_index < len(self.list_internal_sizes):
+
                 self.internal_sizes = self.list_internal_sizes[self.size_index]
+                # to find that specific key 1 that needs resixzing on its k2,v array
+                # if found it will grab the k2,v values to store it temporary
+                #and then it will resize that k2,v array and then put the values back in and then break
                 for i in range(len(self.hash_tables)):
                     if self.hash_tables[i][0] == self.key2_need_resize:
                         old_hash_table_internal = self.hash_tables[i][-1]
                         old_key1 = self.hash_tables[i][0]
-                        new_hash_table_internal: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes)  # made chg here
+                        new_hash_table_internal: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes)  # resize here
                         new_hash_table_internal.table_size = len(new_hash_table_internal)
                         self.hash_tables[i] = (old_key1, new_hash_table_internal)
                         self.count_low_table = 0
@@ -450,27 +543,27 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 self.size_index = 0
                 return
 
-        #if self.size_index < len(self.TABLE_SIZES):
+
             else:
+                # resize the table once it past the load factor
                 new_size = self.TABLE_SIZES[self.size_index]
                 # for i in range(len(self.hash_tables)):
                 old_hash_table_outer = self.hash_tables
                 new_hash_table_outer: ArrayR[tuple[K1, ArrayR[tuple[K2, V]]]] = ArrayR(new_size)
                 self.hash_tables = new_hash_table_outer
+
                 for j in range(len(self.hash_tables)):
-                    hash_table: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes)
+
+                    hash_table: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes) # testing self.list_internal_sizes[0]
                     hash_table.table_size = len(hash_table)
                     hash_table.hash = lambda k: self.hash2(k, hash_table)
                     self.hash_tables[j] = (None, hash_table)
 
-
-
-
-                # self.hash_tables.table_size = len(new_hash_table_outer)
+                # for putting back the key1 , key2, values into the resized table
                 self.count_top_table = 0
                 for i in range(len(old_hash_table_outer)):
                     if old_hash_table_outer[i] is not None:
-                        #if len(old_hash_table_outer[i][-1]) == self.internal_sizes:
+                        #testing codes removed
                         for j in range(len(old_hash_table_outer[i][-1])):
                             if old_hash_table_outer[i][-1][j] is not None:
                                 key1 = old_hash_table_outer[i][0]
@@ -482,6 +575,8 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                                     self.count_top_table += 1
                                 self.hash_tables[index1][-1][index2] = (key2, value)
                                 self.count_low_table += 1
+
+
                 self.size_index = 0
 
                 return
@@ -491,7 +586,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
 
 
-
+    """
+                            if len(old_hash_table_outer[i][-1]) == self.internal_sizes:
+                            hash_table: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes)
+                            key_int_resize = old_hash_table_outer[i][0]
+    """
 
 
 
