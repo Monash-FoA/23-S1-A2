@@ -567,6 +567,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
                 # since tuples are immutable the resize of the internal table needs to do again
                 # so it regenerate the internal size table size
+
                 for j in range(len(self.hash_tables)):
 
                     hash_table: ArrayR[tuple[K2, V]] = ArrayR(self.internal_sizes) # testing self.list_internal_sizes[0]
@@ -574,11 +575,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                     hash_table.hash = lambda k: self.hash2(k, hash_table)
                     self.hash_tables[j] = (None, hash_table)
 
+
                 # for putting back the key1 , key2, values into the resized table
                 self.count_top_table = 0
                 for i in range(len(old_hash_table_outer)):
                     if old_hash_table_outer[i] is not None:
-                        #testing codes removed
 
                         for j in range(len(old_hash_table_outer[i][-1])):
                             if old_hash_table_outer[i][-1][j] is not None:
@@ -588,10 +589,11 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
                                 index1, index2 = self._linear_probe(key1, key2, True)
                                 if self.hash_tables[index1][0] is None:
-                                    self.hash_tables[index1] = (key1, self.hash_tables[index1][-1])
+                                    self.hash_tables[index1] = (key1, self.hash_tables[index1][-1]) #
                                     self.count_top_table += 1
                                 self.hash_tables[index1][-1][index2] = (key2, value)
                                 self.count_low_table += 1
+
 
 
                 self.size_index = 0
